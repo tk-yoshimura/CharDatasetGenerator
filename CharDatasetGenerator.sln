@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31702.278
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CharDatasetGenerator", "CharDatasetGenerator\CharDatasetGenerator.csproj", "{E5684D5D-F509-4DB7-9106-6A4C36DEAAFF}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ToGrayscale", "ToGrayscale\ToGrayscale.pyproj", "{7D479106-925D-4747-9ACE-F62CF5BF828C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E5684D5D-F509-4DB7-9106-6A4C36DEAAFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5684D5D-F509-4DB7-9106-6A4C36DEAAFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5684D5D-F509-4DB7-9106-6A4C36DEAAFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5684D5D-F509-4DB7-9106-6A4C36DEAAFF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D479106-925D-4747-9ACE-F62CF5BF828C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D479106-925D-4747-9ACE-F62CF5BF828C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {525B3AC1-8EB5-4CE4-ABD6-B6FA85CB4D1D}
+	EndGlobalSection
+EndGlobal
