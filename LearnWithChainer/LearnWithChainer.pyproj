@@ -2,15 +2,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>7d479106-925d-4747-9ace-f62cf5bf828c</ProjectGuid>
+    <ProjectGuid>bdec9ae0-916f-45e7-a2f2-58143eda0ccd</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>to_grayscale.py</StartupFile>
+    <StartupFile>main.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
-    <Name>ToGrayscale</Name>
-    <RootNamespace>ToGrayscale</RootNamespace>
+    <Name>LearnWithChainer</Name>
+    <RootNamespace>LearnWithChainer</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,7 +21,10 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="to_grayscale.py" />
+    <Compile Include="main.py" />
+    <Compile Include="model.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

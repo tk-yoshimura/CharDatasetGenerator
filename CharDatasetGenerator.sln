@@ -7,6 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CharDatasetGenerator", "Cha
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ToGrayscale", "ToGrayscale\ToGrayscale.pyproj", "{7D479106-925D-4747-9ACE-F62CF5BF828C}"
 EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "MakeNpz", "MakeNpz\MakeNpz.pyproj", "{D61F411F-1322-43EA-8FCA-0483D644BE4D}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "LearnWithChainer", "LearnWithChainer\LearnWithChainer.pyproj", "{BDEC9AE0-916F-45E7-A2F2-58143EDA0CCD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,6 +23,10 @@ Global
 		{E5684D5D-F509-4DB7-9106-6A4C36DEAAFF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7D479106-925D-4747-9ACE-F62CF5BF828C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7D479106-925D-4747-9ACE-F62CF5BF828C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D61F411F-1322-43EA-8FCA-0483D644BE4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D61F411F-1322-43EA-8FCA-0483D644BE4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDEC9AE0-916F-45E7-A2F2-58143EDA0CCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDEC9AE0-916F-45E7-A2F2-58143EDA0CCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
