@@ -2,15 +2,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>bdec9ae0-916f-45e7-a2f2-58143eda0ccd</ProjectGuid>
+    <ProjectGuid>dc591083-9e2d-42c4-b8f3-51620581cb2f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>main.py</StartupFile>
+    <StartupFile>numeric_classifier.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
-    <Name>LearnWithChainer</Name>
-    <RootNamespace>LearnWithChainer</RootNamespace>
+    <Name>NumericDetector</Name>
+    <RootNamespace>NumericDetector</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,13 +21,8 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="generate_noise.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="main.py" />
-    <Compile Include="model.py">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="model.py" />
+    <Compile Include="numeric_classifier.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
