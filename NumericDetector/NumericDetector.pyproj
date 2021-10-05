@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>dc591083-9e2d-42c4-b8f3-51620581cb2f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>numeric_classifier.py</StartupFile>
+    <StartupFile>classifier.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,7 +22,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="model.py" />
-    <Compile Include="numeric_classifier.py" />
+    <Compile Include="classifier.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
