@@ -21,9 +21,6 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="generate_noise.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="main.py" />
     <Compile Include="model.py">
       <SubType>Code</SubType>

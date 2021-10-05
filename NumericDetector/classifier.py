@@ -55,14 +55,15 @@ def classifier(img):
     class_index: int
         0-9: numeric symbol
         10: probably other symbol
-        11: probably noise
     score: float
         score = max NN output - second NN output
     """
 
     img = normalize(img)
     x = img[np.newaxis, np.newaxis, :, :]
-    y = model(x).data[0]
+
+    with chainer.using_config('train', False), chainer.using_config('enable_backprop', False):
+        y = model(x).data[0]
     
     index_sorted = np.argsort(y)[::-1]
     max_index, second_index = index_sorted[0], index_sorted[1]
@@ -72,7 +73,7 @@ def classifier(img):
     return max_index, score
 
 
-img = cv2.imread('../dataset/test2.png', cv2.IMREAD_GRAYSCALE)
+img = cv2.imread('../dataset/test3.png', cv2.IMREAD_GRAYSCALE)
 img = 1 - img.astype(np.float32) / 255
 
 img_warped = normalize(img) * 255

@@ -73,7 +73,7 @@ namespace CharDatasetGenerator {
 
                                 foreach (int angle in new int[] { -10, -5, 0, +5, +10 }) {
                                     foreach (float aspect in new float[] { 0.8f, 0.9f, 1.0f, 1 / 0.9f, 1 / 0.8f }) {
-                                        using Bitmap bitmap = DrawString(fontname, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", imagesize, angle, aspect, bold_style);
+                                        using Bitmap bitmap = DrawString(fontname, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", imagesize, angle, aspect, bold_style);
 
                                         bitmap.Save(dirpath + $"img_angle_{angle:p#;m#;z0}_aspect_{(int)(aspect * 100 + 0.5)}.png");
                                     }

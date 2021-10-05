@@ -27,4 +27,4 @@ def make_npz(imgsize, category, chars):
 
 for imgsize in [16, 24, 32, 48]:
     make_npz(imgsize, category='numeric',  chars='0123456789')
-    make_npz(imgsize, category='alphabet', chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+    make_npz(imgsize, category='alphabet', chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
