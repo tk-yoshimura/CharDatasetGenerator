@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>dc591083-9e2d-42c4-b8f3-51620581cb2f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>classifier.py</StartupFile>
+    <StartupFile>numeric_detector.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -21,8 +21,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="model.py" />
-    <Compile Include="classifier.py" />
+    <Compile Include="numeric_detector.py" />
+    <Compile Include="numeric_classifier_model.py" />
+    <Compile Include="numeric_classifier.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
