@@ -78,8 +78,8 @@ def group_bounds(bounds: np.ndarray) -> list:
             maxx = minx + np.minimum(bound[2], bound[3])
             miny = cy - np.maximum(4, bound[3]) / 4
             maxy = cy + np.maximum(4, bound[3]) / 4
-            minsize = bound[2] * bound[3] / 16
-            maxsize = bound[2] * bound[3] * 16
+            minsize = bound[2] * bound[3] / 4
+            maxsize = bound[2] * bound[3] * 4
 
             candidate_indexes = np.where(
                 np.logical_and(
