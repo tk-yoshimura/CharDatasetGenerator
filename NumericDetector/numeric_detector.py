@@ -33,6 +33,72 @@ def compute_iou(bound1: np.ndarray, bound2: np.ndarray) -> float:
 
     return iou
 
+def sift_bounds(bounds: np.ndarray, x_range: tuple, y_range: tuple, w_range: tuple, h_range: tuple, mode: str, additional_cond = None) -> int:
+    """
+    Parameters
+    ---------
+    bounds: np.ndarray
+        N x 4 2D array
+        bound: (left, top, width, height)
+    x_range: (int, int)
+        left bbox coord range
+    y_range: (int, int)
+        top, bottom coord range
+    w_range: (int, int)
+    h_range: (int, int)
+    mode: str
+        'most_left', 'most_right'
+    additional_cond: np.ndarray or None
+        N 1D boolean array
+    Returns
+    ---------
+    bound_index: inr or None
+    """
+    
+    if bounds.ndim != 2 or bounds.shape[1] != 4:
+        raise ValueError('bounds')
+    if not mode in ['most_left', 'most_right']:
+        raise ValueError('mode')
+    if not additional_cond is None \
+        and additional_cond.dtype != np.bool \
+        and additional_cond.shape != (bounds.shape[0],):
+
+        raise ValueError('additional_cond')
+
+    x_min, x_max = x_range
+    y_min, y_max = y_range
+    w_min, w_max = w_range
+    h_min, h_max = h_range
+
+    ls, ts, ws, hs = bounds[:, 0], bounds[:, 1], bounds[:, 2], bounds[:, 3]
+    bs = ts + hs
+
+    inbox = np.logical_and(
+        np.logical_and(np.logical_and(ls >= x_min, ls <= x_max), np.logical_and(ts >= y_min, bs <= y_max)),
+        np.logical_and(np.logical_and(ws >= w_min, ws <= w_max), np.logical_and(hs >= h_min, hs <= h_max)))
+
+    if additional_cond is None:
+        candidate_indexes = np.where(inbox)[0]
+    else:
+        candidate_indexes = np.where(np.logical_and(inbox, additional_cond))[0]
+
+    if len(candidate_indexes) < 1:
+        return None
+
+    candidate_bounds = bounds[candidate_indexes]
+    
+    if mode is 'most_left':
+        bound_index = candidate_indexes[
+                np.lexsort((
+                    candidate_bounds[:, 2] * candidate_bounds[:, 3],
+                    -candidate_bounds[:, 0]))[-1]]
+    else:
+        bound_index = candidate_indexes[
+                np.lexsort((
+                    candidate_bounds[:, 2] * candidate_bounds[:, 3],
+                    candidate_bounds[:, 0] + candidate_bounds[:, 2]))[-1]]
+
+    return bound_index
 
 def group_bounds(bounds: np.ndarray) -> list:
     """
@@ -57,9 +123,6 @@ def group_bounds(bounds: np.ndarray) -> list:
 
     bounds = bounds[np.argsort(bounds[:, 0])]
 
-    ls, ts, bs = bounds[:, 0], bounds[:, 1], bounds[:, 1] + bounds[:, 3]
-    cys, sizes = bounds[:, 1] + bounds[:, 3] / 2, bounds[:, 2] * bounds[:, 3]
-
     group_index = 0
 
     for i in range(n):
@@ -71,53 +134,30 @@ def group_bounds(bounds: np.ndarray) -> list:
 
         prev_bound_index = i
         while prev_bound_index < n:
-            bound, cy = bounds[prev_bound_index], cys[prev_bound_index]
-            top, bottom = ts[prev_bound_index], bs[prev_bound_index]
+            l, t, w, h = bounds[prev_bound_index]
             
-            minx = bound[0] + bound[2] - 1
-            maxx = minx + np.minimum(bound[2], bound[3])
-            miny = cy - np.maximum(4, bound[3]) / 4
-            maxy = cy + np.maximum(4, bound[3]) / 4
-            minsize = bound[2] * bound[3] / 8
-            maxsize = bound[2] * bound[3] * 4
+            x_min, x_max = l + w - 1, l + w * 2
+            y_min, y_max = t - max(1, h // 4), t + h + max(1, h // 4)
+            w_min, w_max = w // 4, w * 4
+            h_min, h_max = h * 3 // 4, h * 5 // 4
 
-            candidate_indexes = np.where(
-                np.logical_and(
-                    np.logical_and(
-                        g < 0,
-                        np.logical_and(sizes >= minsize, sizes <= maxsize)
-                    ),
-                    np.logical_and(
-                        np.logical_and(ls >= minx, ls <= maxx),
-                        np.logical_or(
-                            np.logical_and(cys >= miny, cys <= maxy),
-                            np.logical_and(top >= ts,   bottom <= bs),
-                        )
-                    )
-                )
-            )[0]
+            bound_index = sift_bounds(bounds, (x_min, x_max), (y_min, y_max), (w_min, w_max), (h_min, h_max), 
+                                      mode = 'most_left', additional_cond = g<0)
 
-            if len(candidate_indexes) < 1:
+            if bound_index is None:
                 break
 
-            candidate_bounds = bounds[candidate_indexes]
-            most_large_index = candidate_indexes[
-                    np.lexsort((
-                        candidate_bounds[:, 2] * candidate_bounds[:, 3],
-                        -candidate_bounds[:, 0])
-                )[-1]]
-
-            g[most_large_index] = group_index
+            g[bound_index] = group_index
             group_index += 1
-            prev_bound_index = most_large_index
-            groups.append(bounds[most_large_index])
+            prev_bound_index = bound_index
+            groups.append(bounds[bound_index])
 
         groups = np.stack(groups, axis=0)
         list_bounds.append(groups)
 
     return list_bounds
 
-def tweak_bounds(bounds: np.ndarray, grouped_bounds: np.ndarray, detect_dot = True, detect_prefix = True) -> np.ndarray:
+def tweak_bounds(bounds: np.ndarray, grouped_bounds: np.ndarray, detect_dot = True, detect_sign = True) -> np.ndarray:
     """
     Parameters
     ---------
@@ -127,7 +167,7 @@ def tweak_bounds(bounds: np.ndarray, grouped_bounds: np.ndarray, detect_dot = Tr
     grouped_bounds: np.ndarray
         N x 4 2D integer array
         bound: (left, top, width, height)
-    detect_prefix: bool
+    detect_sign: bool
     Returns
     ---------
     bounds: np.ndarray
@@ -152,89 +192,62 @@ def tweak_bounds(bounds: np.ndarray, grouped_bounds: np.ndarray, detect_dot = Tr
     width_median = np.maximum(0.1, np.median(widths))
 
     new_bounds = []
-    
-    ls, rs = bounds[:, 0], bounds[:, 0] + bounds[:, 2]
-    cys, sizes = bounds[:, 1] + bounds[:, 3] / 2, bounds[:, 2] * bounds[:, 3]
 
-    if detect_prefix:
-        bound = grouped_bounds[0]
+    if detect_sign:
+        l, t, _, h = grouped_bounds[0]
             
-        cy = bound[1] + bound[3] / 2
-        minx = bound[0] - np.minimum(bound[2], bound[3])
-        maxx = bound[0] 
-        miny = cy - np.maximum(4, bound[3]) / 4
-        maxy = cy + np.maximum(4, bound[3]) / 4
-        minsize = bound[2] * bound[3] / 16
-        maxsize = bound[2] * bound[3]        
+        x_min, x_max = l - width_median * 3 // 2, l - width_median // 2
+        y_min, y_max = t, t + h
+        w_min, w_max = width_median // 2, width_median * 2
+        h_min, h_max = h // 16, h * 2 // 3
 
-        candidate_indexes = np.where(
-            np.logical_and(
-                np.logical_and(sizes >= minsize, sizes <= maxsize),
-                np.logical_and(
-                    np.logical_and(rs >= minx, rs <= maxx),
-                    np.logical_and(cys >= miny, cys <= maxy)
-                )
-            )
-        )[0]
+        bound_index = sift_bounds(bounds, (x_min, x_max), (y_min, y_max), (w_min, w_max), (h_min, h_max), 
+                                  mode = 'most_right')
 
-        if len(candidate_indexes) >= 1:        
-            candidate_bounds = bounds[candidate_indexes]
-            most_large_index = candidate_indexes[
-                np.lexsort((
-                    candidate_bounds[:, 2] * candidate_bounds[:, 3],
-                    candidate_bounds[:, 0] + candidate_bounds[:, 2])
-            )[-1]]
-
-            new_bounds.append(bounds[most_large_index])
+        if not bound_index is None:
+            new_bounds.append(bounds[bound_index])
             
-    for w, h, bound in zip(widths, heights, grouped_bounds):
+    for i, (w, h, bound) in enumerate(zip(widths, heights, grouped_bounds)):
         n = int(np.floor(w / width_median + 0.2))
     
         if n <= 1 or w / h < 0.9:
             new_bounds.append(bound)
         else:
             bx, by, bw, bh = bound
-            for i in range(n):
-                new_bounds.append(np.array([bx + bw * i / n, by, bw / n, bh]))
+            for j in range(n):
+                new_bounds.append(np.array([bx + bw * j / n, by, bw / n, bh]))
+        
+        if detect_dot and i < len(grouped_bounds) - 1:
+            bx, by, bw, bh = bound
+            
+            x_min, x_max = bx + bw - 1, bx + 2 * bw
+            y_min, y_max = by + max(1, bh // 2), by + bh + max(1, bh // 8)
+            w_min, w_max = bw // 16, bw
+            h_min, h_max = bh // 16, bh // 2
+        
+            bound_index = sift_bounds(bounds, (x_min, x_max), (y_min, y_max), (w_min, w_max), (h_min, h_max), 
+                                      mode = 'most_left')
+        
+            if bound_index is None:
+                continue
 
-        if detect_dot:
-            minx = bound[0] + bound[2] * 4 // 5
-            maxx = bound[0] + bound[2] * 2 
-            miny = bound[1] + bound[3] * 3 // 4
-            maxy = bound[1] + bound[3] + 1
-            minsize = bound[2] * bound[3] / 128
-            maxsize = bound[2] * bound[3] / 6  
+            bound_dot = bounds[bound_index]
+            iou_next = compute_iou(bound_dot, grouped_bounds[i + 1])
 
-            candidate_indexes = np.where(
-                np.logical_and(
-                    np.logical_and(sizes >= minsize, sizes <= maxsize),
-                    np.logical_and(
-                        np.logical_and(ls >= minx, ls <= maxx),
-                        np.logical_and(cys >= miny, cys <= maxy)
-                    )
-                )
-            )[0]
+            if iou_next > 0.1:
+                continue
 
-            if len(candidate_indexes) >= 1:        
-                candidate_bounds = bounds[candidate_indexes]
-                most_large_index = candidate_indexes[
-                    np.lexsort((
-                        candidate_bounds[:, 2] * candidate_bounds[:, 3],
-                        -candidate_bounds[:, 0])
-                )[-1]]
-
-                new_bounds.append(bounds[most_large_index])
+            new_bounds.append(bound_dot)
                         
     grouped_bounds = np.stack(new_bounds) if len(new_bounds) > 0 else np.zeros((0, 4), np.int)
 
     return grouped_bounds
 
 
-img = cv2.imread('../dataset/test02.png', cv2.IMREAD_GRAYSCALE)
-img_disp = cv2.imread('../dataset/test02.png')
+img = cv2.imread('../dataset/test_map.png', cv2.IMREAD_GRAYSCALE)
+img_disp = cv2.imread('../dataset/test_map.png')
 
-img_mask = np.where(img > 96, 1, 0).astype(np.uint8)
-img_threshold = img_mask * cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, blockSize=9, C=2)
+img_threshold = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, blockSize=9, C=2)
 
 cv2.imwrite('../dataset/test_thres.png', img_threshold)
 
@@ -252,21 +265,31 @@ cv2.imwrite('../dataset/test_bounds.png', img_bounds)
 grouped_bounds = group_bounds(bounds)
 
 img_groupbounds = img_disp.copy()
-for i, grouped_bound in enumerate(grouped_bounds):
+for j, grouped_bound in enumerate(grouped_bounds):
     if len(grouped_bound) <= 1:
         continue
 
     for bound in grouped_bound:
-        img_groupbounds = cv2.rectangle(img_groupbounds, bound, color=[((i + 1) % 7) * 32, 0, 0], thickness=1)
+        img_groupbounds = cv2.rectangle(img_groupbounds, bound, color=[((j + 1) % 6) * 32, 0, 0], thickness=1)
 
 cv2.imwrite('../dataset/test_groupbounds.png', img_groupbounds)
 
-img_tweakbounds = img_disp.copy()
-for i, grouped_bound in enumerate(grouped_bounds):
-    if len(grouped_bound) <= 2:
+for j, grouped_bound in enumerate(grouped_bounds):
+    if len(grouped_bound) < 2:
         continue
 
+    img_tweakbounds = img_disp.copy()
+    
     for bound in tweak_bounds(bounds, grouped_bound):
-        img_tweakbounds = cv2.rectangle(img_tweakbounds, bound, color=[((i + 1) % 7) * 32, 0, 0], thickness=1)
+        img_tweakbounds = cv2.rectangle(img_tweakbounds, bound, color=[255, 0, 0], thickness=1)
 
-cv2.imwrite('../dataset/test_tweakbounds.png', img_tweakbounds)
+    cv2.imwrite('../dataset/test_tweakbounds_{}.png'.format(j), img_tweakbounds)
+
+bx, by, bw, bh = 10, 20, 100, 50
+            
+x_min, x_max = bx + bw - 1, bx + 3 * bw
+y_min, y_max = by + max(1, bh // 2), by + bh + max(1, bh // 4)
+w_min, w_max = bw // 16, bw
+h_min, h_max = bh // 16, bh // 2
+
+print('end')
