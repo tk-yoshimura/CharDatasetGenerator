@@ -57,7 +57,7 @@ def group_bounds(bounds: np.ndarray) -> list:
 
     bounds = bounds[np.argsort(bounds[:, 0])]
 
-    ls, cys = bounds[:, 0], bounds[:, 1] + bounds[:, 3] / 2
+    ls, cys, sizes = bounds[:, 0], bounds[:, 1] + bounds[:, 3] / 2, bounds[:, 2] * bounds[:, 3]
 
     group_index = 0
 
@@ -77,9 +77,15 @@ def group_bounds(bounds: np.ndarray) -> list:
             maxx = minx + np.minimum(bound[2], bound[3])
             miny = cy - bound[3] / 4 - 1
             maxy = cy + bound[3] / 4 + 1
+            minsize = bound[2] * bound[3] / 4
+            maxsize = bound[2] * bound[3] * 4
 
             candidate_indexes = np.where(
-                np.logical_and(g < 0, 
+                np.logical_and(
+                    np.logical_and(
+                        g < 0,
+                        np.logical_and(sizes >= minsize, sizes <= maxsize)
+                    ),
                     np.logical_and(
                         np.logical_and(ls >= minx, ls <= maxx),
                         np.logical_and(cys >= miny, cys <= maxy)
