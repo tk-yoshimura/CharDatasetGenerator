@@ -78,7 +78,7 @@ def group_bounds(bounds: np.ndarray) -> list:
             maxx = minx + np.minimum(bound[2], bound[3])
             miny = cy - np.maximum(4, bound[3]) / 4
             maxy = cy + np.maximum(4, bound[3]) / 4
-            minsize = bound[2] * bound[3] / 4
+            minsize = bound[2] * bound[3] / 8
             maxsize = bound[2] * bound[3] * 4
 
             candidate_indexes = np.where(
@@ -117,8 +117,121 @@ def group_bounds(bounds: np.ndarray) -> list:
 
     return list_bounds
 
-img = cv2.imread('../dataset/test_map.png', cv2.IMREAD_GRAYSCALE)
-img_disp = cv2.imread('../dataset/test_map.png')
+def tweak_bounds(bounds: np.ndarray, grouped_bounds: np.ndarray, detect_dot = True, detect_prefix = True) -> np.ndarray:
+    """
+    Parameters
+    ---------
+    bounds: np.ndarray
+        N x 4 2D integer array
+        bound: (left, top, width, height)
+    grouped_bounds: np.ndarray
+        N x 4 2D integer array
+        bound: (left, top, width, height)
+    detect_prefix: bool
+    Returns
+    ---------
+    bounds: np.ndarray
+        N x 4 2D array
+        bound: (left, top, width, height)
+    """
+
+    if bounds.ndim != 2 or bounds.shape[1] != 4 or \
+        (bounds.dtype != np.int32 and bounds.dtype != np.int64):
+        raise ValueError('bounds')
+
+    if grouped_bounds.ndim != 2 or grouped_bounds.shape[1] != 4 or \
+        (grouped_bounds.dtype != np.int32 and grouped_bounds.dtype != np.int64):
+        raise ValueError('grouped_bounds')
+
+    if len(grouped_bounds) < 1:
+        return grouped_bounds
+
+    grouped_bounds = grouped_bounds[np.argsort(grouped_bounds[:, 0])]
+
+    widths, heights = grouped_bounds[:, 2], grouped_bounds[:, 3]
+    width_median = np.maximum(0.1, np.median(widths))
+
+    new_bounds = []
+    
+    ls, rs = bounds[:, 0], bounds[:, 0] + bounds[:, 2]
+    cys, sizes = bounds[:, 1] + bounds[:, 3] / 2, bounds[:, 2] * bounds[:, 3]
+
+    if detect_prefix:
+        bound = grouped_bounds[0]
+            
+        cy = bound[1] + bound[3] / 2
+        minx = bound[0] - np.minimum(bound[2], bound[3])
+        maxx = bound[0] 
+        miny = cy - np.maximum(4, bound[3]) / 4
+        maxy = cy + np.maximum(4, bound[3]) / 4
+        minsize = bound[2] * bound[3] / 16
+        maxsize = bound[2] * bound[3]        
+
+        candidate_indexes = np.where(
+            np.logical_and(
+                np.logical_and(sizes >= minsize, sizes <= maxsize),
+                np.logical_and(
+                    np.logical_and(rs >= minx, rs <= maxx),
+                    np.logical_and(cys >= miny, cys <= maxy)
+                )
+            )
+        )[0]
+
+        if len(candidate_indexes) >= 1:        
+            candidate_bounds = bounds[candidate_indexes]
+            most_large_index = candidate_indexes[
+                np.lexsort((
+                    candidate_bounds[:, 2] * candidate_bounds[:, 3],
+                    candidate_bounds[:, 0] + candidate_bounds[:, 2])
+            )[-1]]
+
+            new_bounds.append(bounds[most_large_index])
+            
+    for w, h, bound in zip(widths, heights, grouped_bounds):
+        n = int(np.floor(w / width_median + 0.2))
+    
+        if n <= 1 or w / h < 0.9:
+            new_bounds.append(bound)
+        else:
+            bx, by, bw, bh = bound
+            for i in range(n):
+                new_bounds.append(np.array([bx + bw * i / n, by, bw / n, bh]))
+
+        if detect_dot:
+            minx = bound[0] + bound[2] * 4 // 5
+            maxx = bound[0] + bound[2] * 2 
+            miny = bound[1] + bound[3] * 3 // 4
+            maxy = bound[1] + bound[3] + 1
+            minsize = bound[2] * bound[3] / 128
+            maxsize = bound[2] * bound[3] / 6  
+
+            candidate_indexes = np.where(
+                np.logical_and(
+                    np.logical_and(sizes >= minsize, sizes <= maxsize),
+                    np.logical_and(
+                        np.logical_and(ls >= minx, ls <= maxx),
+                        np.logical_and(cys >= miny, cys <= maxy)
+                    )
+                )
+            )[0]
+
+            if len(candidate_indexes) >= 1:        
+                candidate_bounds = bounds[candidate_indexes]
+                most_large_index = candidate_indexes[
+                    np.lexsort((
+                        candidate_bounds[:, 2] * candidate_bounds[:, 3],
+                        -candidate_bounds[:, 0])
+                )[-1]]
+
+                new_bounds.append(bounds[most_large_index])
+                        
+    grouped_bounds = np.stack(new_bounds) if len(new_bounds) > 0 else np.zeros((0, 4), np.int)
+
+    return grouped_bounds
+
+
+img = cv2.imread('../dataset/test02.png', cv2.IMREAD_GRAYSCALE)
+img_disp = cv2.imread('../dataset/test02.png')
 
 img_mask = np.where(img > 96, 1, 0).astype(np.uint8)
 img_threshold = img_mask * cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, blockSize=9, C=2)
@@ -136,14 +249,24 @@ for bound in bounds:
 
 cv2.imwrite('../dataset/test_bounds.png', img_bounds)
 
-groups = group_bounds(bounds)
+grouped_bounds = group_bounds(bounds)
 
-img_gounpbounds = img_disp.copy()
-for i, group in enumerate(groups):
-    if len(group) <= 1:
+img_groupbounds = img_disp.copy()
+for i, grouped_bound in enumerate(grouped_bounds):
+    if len(grouped_bound) <= 1:
         continue
 
-    for bound in group:
-        img_gounpbounds = cv2.rectangle(img_gounpbounds, bound, color=[((i + 1) % 8) * 32, 0, 0], thickness=1)
+    for bound in grouped_bound:
+        img_groupbounds = cv2.rectangle(img_groupbounds, bound, color=[((i + 1) % 7) * 32, 0, 0], thickness=1)
 
-cv2.imwrite('../dataset/test_gounpbounds.png', img_gounpbounds)
+cv2.imwrite('../dataset/test_groupbounds.png', img_groupbounds)
+
+img_tweakbounds = img_disp.copy()
+for i, grouped_bound in enumerate(grouped_bounds):
+    if len(grouped_bound) <= 2:
+        continue
+
+    for bound in tweak_bounds(bounds, grouped_bound):
+        img_tweakbounds = cv2.rectangle(img_tweakbounds, bound, color=[((i + 1) % 7) * 32, 0, 0], thickness=1)
+
+cv2.imwrite('../dataset/test_tweakbounds.png', img_tweakbounds)
