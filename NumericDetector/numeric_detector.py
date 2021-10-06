@@ -57,7 +57,8 @@ def group_bounds(bounds: np.ndarray) -> list:
 
     bounds = bounds[np.argsort(bounds[:, 0])]
 
-    ls, cys, sizes = bounds[:, 0], bounds[:, 1] + bounds[:, 3] / 2, bounds[:, 2] * bounds[:, 3]
+    ls, ts, bs = bounds[:, 0], bounds[:, 1], bounds[:, 1] + bounds[:, 3]
+    cys, sizes = bounds[:, 1] + bounds[:, 3] / 2, bounds[:, 2] * bounds[:, 3]
 
     group_index = 0
 
@@ -69,16 +70,16 @@ def group_bounds(bounds: np.ndarray) -> list:
         groups = [bounds[i],]
 
         prev_bound_index = i
-
         while prev_bound_index < n:
             bound, cy = bounds[prev_bound_index], cys[prev_bound_index]
+            top, bottom = ts[prev_bound_index], bs[prev_bound_index]
             
             minx = bound[0] + bound[2] - 1
             maxx = minx + np.minimum(bound[2], bound[3])
-            miny = cy - bound[3] / 4 - 1
-            maxy = cy + bound[3] / 4 + 1
-            minsize = bound[2] * bound[3] / 4
-            maxsize = bound[2] * bound[3] * 4
+            miny = cy - np.maximum(4, bound[3]) / 4
+            maxy = cy + np.maximum(4, bound[3]) / 4
+            minsize = bound[2] * bound[3] / 16
+            maxsize = bound[2] * bound[3] * 16
 
             candidate_indexes = np.where(
                 np.logical_and(
@@ -88,7 +89,10 @@ def group_bounds(bounds: np.ndarray) -> list:
                     ),
                     np.logical_and(
                         np.logical_and(ls >= minx, ls <= maxx),
-                        np.logical_and(cys >= miny, cys <= maxy)
+                        np.logical_or(
+                            np.logical_and(cys >= miny, cys <= maxy),
+                            np.logical_and(top >= ts,   bottom <= bs),
+                        )
                     )
                 )
             )[0]
@@ -124,7 +128,7 @@ cv2.imwrite('../dataset/test_thres.png', img_threshold)
 contours, _ = cv2.findContours(img_threshold, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
 bounds = np.stack([cv2.boundingRect(c) for c in contours])
-bounds = bounds[bounds[:, 2] * bounds[:, 3] >= 9]
+bounds = bounds[bounds[:, 2] * bounds[:, 3] >= 4]
 
 img_bounds = img_disp.copy()
 for bound in bounds:
