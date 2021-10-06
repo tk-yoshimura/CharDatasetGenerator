@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 import chainer
-from model import Model
+from numeric_classifier_model import Model
 
 imgsize = 16
 

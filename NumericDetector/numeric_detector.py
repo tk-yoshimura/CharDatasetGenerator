@@ -34,15 +34,13 @@ def compute_iou(bound1: np.ndarray, bound2: np.ndarray) -> float:
     return iou
 
 
-def group_bounds(bounds: np.ndarray, concat_iou_threshold = 0.05) -> list:
+def group_bounds(bounds: np.ndarray) -> list:
     """
     Parameters
     ---------
     bounds: np.ndarray
         N x 4 2D array
         bound: (left, top, width, height)
-    concat_iou_threshold: float
-        minimum iou that concat bound
     Returns
     ---------
     list_bounds: list of np.ndarray
@@ -59,6 +57,8 @@ def group_bounds(bounds: np.ndarray, concat_iou_threshold = 0.05) -> list:
 
     bounds = bounds[np.argsort(bounds[:, 0])]
 
+    ls, cys = bounds[:, 0], bounds[:, 1] + bounds[:, 3] / 2
+
     group_index = 0
 
     for i in range(n):
@@ -68,31 +68,39 @@ def group_bounds(bounds: np.ndarray, concat_iou_threshold = 0.05) -> list:
         g[i] = group_index
         groups = [bounds[i],]
 
-        j = i
+        prev_bound_index = i
 
-        while j < n:
-            bound = bounds[j]
-            expected_bound = np.concatenate([bound[:1] + bound[2], bound[1:2], bound[2:]], axis=0)
+        while prev_bound_index < n:
+            bound, cy = bounds[prev_bound_index], cys[prev_bound_index]
+            
+            minx = bound[0] + bound[2] - 1
+            maxx = minx + np.minimum(bound[2], bound[3])
+            miny = cy - bound[3] / 4 - 1
+            maxy = cy + bound[3] / 4 + 1
 
-            max_iou = concat_iou_threshold
-            max_index = -1
+            candidate_indexes = np.where(
+                np.logical_and(g < 0, 
+                    np.logical_and(
+                        np.logical_and(ls >= minx, ls <= maxx),
+                        np.logical_and(cys >= miny, cys <= maxy)
+                    )
+                )
+            )[0]
 
-            for k in range(j + 1, n):
-                if g[k] >= 0:
-                    continue
-
-                iou = compute_iou(expected_bound, bounds[k])
-                if iou > max_iou:
-                    max_iou = iou
-                    max_index = k
-
-            if max_index >= 0:
-                g[max_index] = group_index
-                group_index += 1
-                j = max_index
-                groups.append(bounds[max_index])
-            else:
+            if len(candidate_indexes) < 1:
                 break
+
+            candidate_bounds = bounds[candidate_indexes]
+            most_large_index = candidate_indexes[
+                    np.lexsort((
+                        candidate_bounds[:, 2] * candidate_bounds[:, 3],
+                        -candidate_bounds[:, 0])
+                )[-1]]
+
+            g[most_large_index] = group_index
+            group_index += 1
+            prev_bound_index = most_large_index
+            groups.append(bounds[most_large_index])
 
         groups = np.stack(groups, axis=0)
         list_bounds.append(groups)
@@ -110,7 +118,7 @@ cv2.imwrite('../dataset/test_thres.png', img_threshold)
 contours, _ = cv2.findContours(img_threshold, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
 bounds = np.stack([cv2.boundingRect(c) for c in contours])
-bounds = bounds[bounds[:, 3] > 5]
+bounds = bounds[bounds[:, 2] * bounds[:, 3] >= 9]
 
 img_bounds = img_disp.copy()
 for bound in bounds:
