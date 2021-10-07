@@ -33,6 +33,37 @@ def compute_iou(bound1: np.ndarray, bound2: np.ndarray) -> float:
 
     return iou
 
+def is_inside(bound_inner: np.ndarray, bound_outer: np.ndarray) -> bool:
+    """
+    Parameters
+    ---------
+    bound_inner: np.ndarray
+        1D array
+        (left, top, width, height)
+    bound_outer: np.ndarray
+        1D array
+        (left, top, width, height)
+    Returns
+    ---------
+    inside: bool
+    """
+
+    if bound_inner.shape != (4,):
+        raise ValueError('bound1')
+    if bound_outer.shape != (4,):
+        raise ValueError('bound2')
+
+    coord_inner, size_inner = bound_inner[:2], bound_inner[2:]
+    coord_outer, size_outer = bound_outer[:2], bound_outer[2:]
+ 
+    if np.any(coord_inner < coord_outer):
+        return False
+
+    if np.any(coord_inner - coord_outer + size_inner > size_outer):
+        return False
+    
+    return True
+
 def sift_bounds(bounds: np.ndarray, x_range: tuple, y_range: tuple, w_range: tuple, h_range: tuple, mode: str, additional_cond = None) -> int:
     """
     Parameters
@@ -231,10 +262,9 @@ def tweak_bounds(bounds: np.ndarray, grouped_bounds: np.ndarray, detect_dot = Tr
             if bound_index is None:
                 continue
 
-            bound_dot = bounds[bound_index]
-            iou_next = compute_iou(bound_dot, grouped_bounds[i + 1])
+            bound_dot, bound_next = bounds[bound_index], grouped_bounds[i + 1]
 
-            if iou_next > 0.1:
+            if is_inside(bound_dot, bound_next):
                 continue
 
             new_bounds.append(bound_dot)
@@ -244,8 +274,8 @@ def tweak_bounds(bounds: np.ndarray, grouped_bounds: np.ndarray, detect_dot = Tr
     return grouped_bounds
 
 
-img = cv2.imread('../dataset/test_map.png', cv2.IMREAD_GRAYSCALE)
-img_disp = cv2.imread('../dataset/test_map.png')
+img = cv2.imread('../tests/test_map.png', cv2.IMREAD_GRAYSCALE)
+img_disp = cv2.imread('../tests/test_map.png')
 
 img_threshold = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, blockSize=9, C=-4)
 
@@ -290,12 +320,3 @@ for j, grouped_bound in enumerate(grouped_bounds):
         img_tweakbounds = cv2.rectangle(img_tweakbounds, bound, color=[255, 0, 0], thickness=1)
 
     cv2.imwrite('../dataset/test_tweakbounds_{}.png'.format(j), img_tweakbounds)
-
-bx, by, bw, bh = 10, 20, 100, 50
-            
-x_min, x_max = bx + bw - 1, bx + 3 * bw
-y_min, y_max = by + max(1, bh // 2), by + bh + max(1, bh // 4)
-w_min, w_max = bw // 16, bw
-h_min, h_max = bh // 16, bh // 2
-
-print('end')
