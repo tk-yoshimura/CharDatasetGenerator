@@ -72,15 +72,3 @@ def classifier(img):
 
     return max_index, score
 
-
-img = cv2.imread('../dataset/test3.png', cv2.IMREAD_GRAYSCALE)
-img = 1 - img.astype(np.float32) / 255
-
-img_warped = normalize(img) * 255
-
-cv2.imwrite('../dataset/test_warped.png', img_warped)
-
-class_index, score = classifier(img)
-
-print(class_index)
-print(score)

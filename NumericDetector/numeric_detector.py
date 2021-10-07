@@ -1,6 +1,64 @@
 import cv2
 import numpy as np
 
+def binarize(img: np.ndarray, inversion=False):
+    """
+    Parameters
+    ---------
+    img: np.ndarray
+        2D uint8 array
+    inversion: bool
+        False : black-background white-objects
+        True  : white-background black-objects
+    Returns
+    ---------
+    img_binary: np.ndarray
+        2D uint8 array
+    """
+
+    if img.ndim != 2 or img.dtype != np.uint8:
+        raise ValueError('img')
+
+    if inversion:
+        return cv2.adaptiveThreshold(img, 255, 
+                                     cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                     cv2.THRESH_BINARY_INV, 
+                                     blockSize=9, C=12)
+    else:
+        return cv2.adaptiveThreshold(img, 255, 
+                                     cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                     cv2.THRESH_BINARY, 
+                                     blockSize=9, C=-12)
+
+def list_bounds(img_binary: np.ndarray):
+    """
+    Parameters
+    ---------
+    img_binary: np.ndarray
+        2D uint8 array
+        black-background white-objects
+    Returns
+    ---------
+    bounds: np.ndarray
+        N x 4 2D array
+        bound: (left, top, width, height)
+    """
+
+    if img_binary.ndim != 2 or img_binary.dtype != np.uint8:
+        raise ValueError('img_binary')
+
+    contours, _ = cv2.findContours(img_binary, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+
+    bounds = []
+    for contour in contours:
+        area = cv2.contourArea(contour, oriented=True)
+        if area < 0:
+            bounds.append(cv2.boundingRect(contour))
+
+    bounds = np.stack(bounds)
+
+    return bounds
+
 def compute_iou(bound1: np.ndarray, bound2: np.ndarray) -> float:
     """
     Parameters
@@ -188,6 +246,55 @@ def group_bounds(bounds: np.ndarray) -> list:
 
     return list_bounds
 
+def sift_groupedbounds(list_bounds: list, w_range: tuple, h_range: tuple, aspect_range = None) -> list:
+    """
+    Parameters
+    ---------
+    list_bounds: list of np.ndarray
+        list of N x 4 2D array
+        bound: (left, top, width, height)
+    w_range: (int, int)
+        range of max width bounds 
+    h_range: (int, int)
+        range of max height bounds
+    aspect_range: (float, float) or None
+        range of median aspect(width/height) bounds
+    Returns
+    ---------
+    list_bounds: list of np.ndarray
+        list of N x 4 2D array
+        bound: (left, top, width, height)
+    """
+
+    if type(list_bounds) != list:
+        raise ValueError('list_bounds')
+
+    w_min, w_max = w_range
+    h_min, h_max = h_range
+    aspect_min, aspect_max = aspect_range if aspect_range is not None else (None, None)
+
+    new_list_bounds = []
+
+    for bounds in list_bounds:
+        if bounds.ndim != 2 or bounds.shape[1] != 4:
+            raise ValueError('bounds')
+
+        w, h = np.max(bounds[:, 2]), np.min(bounds[:, 3])
+
+        if w < w_min or w > w_max or h < h_min or h > h_max:
+            continue
+
+        if aspect_range is not None:
+            aspects = w / np.maximum(1e-5, h)
+            aspect_median = np.median(aspects)
+
+            if aspect_median < aspect_min or aspect_median > aspect_max:
+                continue
+
+        new_list_bounds.append(bounds)
+
+    return new_list_bounds
+
 def tweak_bounds(bounds: np.ndarray, grouped_bounds: np.ndarray, detect_dot = True, detect_sign = True) -> np.ndarray:
     """
     Parameters
@@ -201,7 +308,7 @@ def tweak_bounds(bounds: np.ndarray, grouped_bounds: np.ndarray, detect_dot = Tr
     detect_sign: bool
     Returns
     ---------
-    bounds: np.ndarray
+    grouped_bounds: np.ndarray
         N x 4 2D array
         bound: (left, top, width, height)
     """
@@ -273,50 +380,29 @@ def tweak_bounds(bounds: np.ndarray, grouped_bounds: np.ndarray, detect_dot = Tr
 
     return grouped_bounds
 
+def bound_rects(rects: np.ndarray) -> np.ndarray:
+    """
+    Parameters
+    ---------
+    rects: np.ndarray
+        N x 4 2D integer array
+        rect: (left, top, width, height)
+    Returns
+    ---------
+    bound_rects: np.ndarray
+        1D array
+        (left, top, width, height)
+    """
 
-img = cv2.imread('../tests/test_map.png', cv2.IMREAD_GRAYSCALE)
-img_disp = cv2.imread('../tests/test_map.png')
+    if rects.ndim != 2 or rects.shape[1] != 4:
+        raise ValueError('rects')
 
-img_threshold = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, blockSize=9, C=-4)
+    left, top = rects[:, 0], rects[:, 1]
+    right, bottom = left + rects[:, 2], top + rects[:, 3]
 
-cv2.imwrite('../dataset/test_thres.png', img_threshold)
+    left_min, top_min = np.min(left), np.min(top)
+    right_max, bottom_max = np.max(right), np.max(bottom)
 
-contours, _ = cv2.findContours(img_threshold, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    bound_rects = np.array([left_min, top_min, right_max - left_min, bottom_max - top_min], dtype=rects.dtype)
 
-bounds = []
-
-for contour in contours:
-    area = cv2.contourArea(contour, oriented=True)
-    if area < 0:
-        bounds.append(cv2.boundingRect(contour))
-
-bounds = np.stack(bounds)
-
-img_bounds = img_disp.copy()
-for bound in bounds:
-    img_bounds = cv2.rectangle(img_bounds, bound, color=[255, 0, 0], thickness=1)
-
-cv2.imwrite('../dataset/test_bounds.png', img_bounds)
-
-grouped_bounds = group_bounds(bounds)
-
-img_groupbounds = img_disp.copy()
-for j, grouped_bound in enumerate(grouped_bounds):
-    if len(grouped_bound) <= 1:
-        continue
-
-    for bound in grouped_bound:
-        img_groupbounds = cv2.rectangle(img_groupbounds, bound, color=[((j + 1) % 6) * 32, 0, 0], thickness=1)
-
-cv2.imwrite('../dataset/test_groupbounds.png', img_groupbounds)
-
-for j, grouped_bound in enumerate(grouped_bounds):
-    if len(grouped_bound) < 2:
-        continue
-
-    img_tweakbounds = img_disp.copy()
-    
-    for bound in tweak_bounds(bounds, grouped_bound):
-        img_tweakbounds = cv2.rectangle(img_tweakbounds, bound, color=[255, 0, 0], thickness=1)
-
-    cv2.imwrite('../dataset/test_tweakbounds_{}.png'.format(j), img_tweakbounds)
+    return bound_rects

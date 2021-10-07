@@ -52,5 +52,6 @@
 /results_disused
 /dataset
 /tests
+/results
 /LearnWithChainer/results
 *.zip
