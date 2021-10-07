@@ -247,14 +247,20 @@ def tweak_bounds(bounds: np.ndarray, grouped_bounds: np.ndarray, detect_dot = Tr
 img = cv2.imread('../dataset/test_map.png', cv2.IMREAD_GRAYSCALE)
 img_disp = cv2.imread('../dataset/test_map.png')
 
-img_threshold = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, blockSize=9, C=2)
+img_threshold = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, blockSize=9, C=-4)
 
 cv2.imwrite('../dataset/test_thres.png', img_threshold)
 
 contours, _ = cv2.findContours(img_threshold, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
-bounds = np.stack([cv2.boundingRect(c) for c in contours])
-bounds = bounds[bounds[:, 2] * bounds[:, 3] >= 4]
+bounds = []
+
+for contour in contours:
+    area = cv2.contourArea(contour, oriented=True)
+    if area < 0:
+        bounds.append(cv2.boundingRect(contour))
+
+bounds = np.stack(bounds)
 
 img_bounds = img_disp.copy()
 for bound in bounds:
