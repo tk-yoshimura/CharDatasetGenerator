@@ -23,12 +23,12 @@ def binarize(img: np.ndarray, inversion=False):
         return cv2.adaptiveThreshold(img, 255, 
                                      cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
                                      cv2.THRESH_BINARY_INV, 
-                                     blockSize=9, C=12)
+                                     blockSize=9, C=8)
     else:
         return cv2.adaptiveThreshold(img, 255, 
                                      cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
                                      cv2.THRESH_BINARY, 
-                                     blockSize=9, C=-12)
+                                     blockSize=9, C=-8)
 
 def list_bounds(img_binary: np.ndarray):
     """
@@ -353,7 +353,7 @@ def tweak_bounds(bounds: np.ndarray, grouped_bounds: np.ndarray, detect_dot = Tr
         else:
             bx, by, bw, bh = bound
             for j in range(n):
-                new_bounds.append(np.array([bx + bw * j / n, by, bw / n, bh]))
+                new_bounds.append(np.array([bx + bw * j // n, by, bw // n, bh]))
         
         if detect_dot and i < len(grouped_bounds) - 1:
             bx, by, bw, bh = bound

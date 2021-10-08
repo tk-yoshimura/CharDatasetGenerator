@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>dc591083-9e2d-42c4-b8f3-51620581cb2f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>test.py</StartupFile>
+    <StartupFile>numeric_detect_test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -24,7 +24,7 @@
     <Compile Include="numeric_detector.py" />
     <Compile Include="numeric_classifier_model.py" />
     <Compile Include="numeric_classifier.py" />
-    <Compile Include="test.py">
+    <Compile Include="numeric_detect_test.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

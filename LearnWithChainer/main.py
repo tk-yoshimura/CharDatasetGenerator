@@ -1,9 +1,11 @@
 import os
 import numpy as np
-from model import Model 
 
 from chainer import datasets, iterators, optimizers
 import chainer.links as L
+
+from model import Model 
+import transform
 
 imgsize = 16
 
@@ -11,7 +13,7 @@ numerics  = np.load('../dataset/numeric_size_{}.npz'.format(imgsize))
 alphabets = np.load('../dataset/alphabet_size_{}.npz'.format(imgsize))
 
 batchsize = 1024
-iterations = 10000
+iterations = 100000
 dirpath_results = 'results/'
 
 os.makedirs(dirpath_results, exist_ok=True)
@@ -41,6 +43,7 @@ ts = np.concatenate(ts, axis=0)
 
 dataset = datasets.TupleDataset(xs, ts)
 trainset, testset = datasets.split_dataset_random(dataset, len(dataset) * 9 // 10)
+trainset = datasets.TransformDataset(trainset, transform.shift)
 
 train_iter = iterators.SerialIterator(trainset, batchsize, shuffle=True)
 test_iter = iterators.SerialIterator(testset, batchsize, shuffle=True)
@@ -80,6 +83,6 @@ with open(dirpath_results + 'loss.csv', 'w') as f:
             f.flush()
 
             model.save(dirpath_results + 'model_snap_%d.npz' % iter)
-            optimizer.alpha *= 0.95
+            optimizer.alpha *= 0.975
 
 model.save('../model/numeric_classifier_model.npz')
