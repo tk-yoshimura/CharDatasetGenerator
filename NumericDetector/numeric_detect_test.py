@@ -3,7 +3,7 @@ import numpy as np
 from numeric_detector import *
 from numeric_classifier import *
 
-imgpath = '../tests/test02.png'
+imgpath = '../tests/test_map_inv.png'
 
 img = 255 - cv2.imread(imgpath, cv2.IMREAD_GRAYSCALE)
 img_disp = cv2.imread(imgpath)
