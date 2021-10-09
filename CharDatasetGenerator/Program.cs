@@ -44,7 +44,7 @@ namespace CharDatasetGenerator {
                 }
 
                 try {
-                    foreach (int imagesize in new int[] { 16, 24, 32, 48 }) {
+                    foreach (int imagesize in new int[] { 16 }) {
                         /*numeric*/
                         {
                             foreach (bool bold_style in new bool[] { true, false }) {
@@ -55,9 +55,11 @@ namespace CharDatasetGenerator {
 
                                 foreach (int angle in new int[] { -10, -5, 0, +5, +10 }) {
                                     foreach (float aspect in new float[] { 0.8f, 0.9f, 1.0f, 1 / 0.9f, 1 / 0.8f }) {
-                                        using Bitmap bitmap = DrawString(fontname, "0123456789", imagesize, angle, aspect, bold_style);
+                                        foreach (float margin in new float[] { 1, 0.5f, 0, -0.5f, -1 }) {
+                                            using Bitmap bitmap = DrawString(fontname, "0123456789", imagesize, angle, aspect, margin, bold_style);
 
-                                        bitmap.Save(dirpath + $"img_angle_{angle:p#;m#;z0}_aspect_{(int)(aspect * 100 + 0.5)}.png");
+                                            bitmap.Save(dirpath + $"img_angle_{angle:p#;m#;z0}_aspect_{(int)(aspect * 100 + 0.5)}_margin_{(margin*10):p#;m#;z0}.png");
+                                        }
                                     }
                                 }
                             }
@@ -73,9 +75,11 @@ namespace CharDatasetGenerator {
 
                                 foreach (int angle in new int[] { -10, -5, 0, +5, +10 }) {
                                     foreach (float aspect in new float[] { 0.8f, 0.9f, 1.0f, 1 / 0.9f, 1 / 0.8f }) {
-                                        using Bitmap bitmap = DrawString(fontname, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", imagesize, angle, aspect, bold_style);
+                                        foreach (float margin in new float[] { 1, 0.5f, 0, -0.5f, -1 }) {
+                                            using Bitmap bitmap = DrawString(fontname, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-", imagesize, angle, aspect, margin, bold_style);
 
-                                        bitmap.Save(dirpath + $"img_angle_{angle:p#;m#;z0}_aspect_{(int)(aspect * 100 + 0.5)}.png");
+                                            bitmap.Save(dirpath + $"img_angle_{angle:p#;m#;z0}_aspect_{(int)(aspect * 100 + 0.5)}_margin_{(margin*10):p#;m#;z0}.png");
+                                        }
                                     }
                                 }
                             }
@@ -90,7 +94,7 @@ namespace CharDatasetGenerator {
             }
         }
 
-        static Bitmap DrawChar(string fontname, char c, int imagesize, float angle = 0, float aspect = 1, bool bold_style = false) {
+        static Bitmap DrawChar(string fontname, char c, int imagesize, float angle = 0, float aspect = 1, float margin = 1, bool bold_style = false) {
             string str = $"{c}";
 
             Bitmap image = new(imagesize, imagesize);
@@ -112,7 +116,7 @@ namespace CharDatasetGenerator {
 
             RectangleF rect = path.GetBounds();
             float size = Math.Max(rect.Width, rect.Height);
-            float scale = (imagesize - 2) / size;
+            float scale = (imagesize - margin * 2) / size;
             float offset_x = (rect.X + rect.Width / 2) * scale - imagesize / 2;
             float offset_y = (rect.Y + rect.Height / 2) * scale - imagesize / 2;
 
@@ -132,13 +136,13 @@ namespace CharDatasetGenerator {
             return image;
         }
 
-        static Bitmap DrawString(string fontname, string str, int imagesize, float angle = 0, float aspect = 1, bool bold_style = false) {
+        static Bitmap DrawString(string fontname, string str, int imagesize, float angle = 0, float aspect = 1, float margin = 1, bool bold_style = false) {
             Bitmap bitmap_str = new Bitmap(imagesize * str.Length, imagesize);
             using Graphics graphics = Graphics.FromImage(bitmap_str);
             
             int index = 0;
             foreach (char c in str) {
-                using Bitmap bitmap = DrawChar(fontname, c, imagesize, angle, aspect, bold_style);
+                using Bitmap bitmap = DrawChar(fontname, c, imagesize, angle, aspect, margin, bold_style);
 
                 graphics.DrawImageUnscaled(bitmap, new Point(imagesize * index, 0));
                 index++;

@@ -19,7 +19,7 @@ dirpath_results = 'results/'
 os.makedirs(dirpath_results, exist_ok=True)
 
 xs, ts = [], []
-class_weights = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.2 / 44], dtype=np.float32)
+class_weights = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.2 / 46], dtype=np.float32)
 
 for i, c in enumerate('0123456789'):
     x = numerics[c][:, np.newaxis, :, :]
@@ -28,7 +28,7 @@ for i, c in enumerate('0123456789'):
     xs.append(x)
     ts.append(t)
 
-for c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ':
+for c in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-':
     if c in 'gloqzIOZ':
         continue
 

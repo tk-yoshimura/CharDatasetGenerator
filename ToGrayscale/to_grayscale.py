@@ -31,7 +31,7 @@ for imgpath in imgpaths:
 
     for suffix, sigma in zip(['_sigma05', '_sigma10', '_sigma15', '_sigma20'], [0.5, 1, 1.5, 2.0]):
         img_blur = cv2.GaussianBlur(img_expand, (ksize, ksize), sigma)
-        img_blur = (img_blur - np.min(img_blur)) / (np.max(img_blur) - np.min(img_blur)) * 255
+        img_blur = np.clip((img_blur - np.min(img_blur)) / (np.max(img_blur) * 0.8 - np.min(img_blur)) * 255, 0, 255)
         img_blur = img_blur[ksize//2:-ksize//2+1,ksize//2:-ksize//2+1]
 
         cv2.imwrite(dirpath + '/' + imgname + suffix + '.png', img_blur)

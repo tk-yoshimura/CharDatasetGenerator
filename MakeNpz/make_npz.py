@@ -25,6 +25,6 @@ def make_npz(imgsize, category, chars):
     
     np.savez_compressed(dirpath + category + '_size_{}.npz'.format(imgsize), **dataset)
 
-for imgsize in [16, 24, 32, 48]:
+for imgsize in [16]:
     make_npz(imgsize, category='numeric',  chars='0123456789')
-    make_npz(imgsize, category='alphabet', chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
+    make_npz(imgsize, category='alphabet', chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-')
